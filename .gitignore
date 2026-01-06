@@ -1,0 +1,16 @@
+# PyCharm / IntelliJ
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+
+# OS
+.DS_Store
+Thumbs.db
