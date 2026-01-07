@@ -1,50 +1,47 @@
 from datetime import datetime
 import re
 
+
 class User:
     _id_counter = 0
-    def __init__(self, username, email, password):
+
+    def __init__(self, username, email, password, balance=10000.0):
         User._id_counter += 1
+        self._id = User._id_counter
         self._username = username
         self._email = email
         self._password = password
+        self._balance = balance
         self._created_at = datetime.now()
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def username(self):
         return self._username
 
     @property
-    def email(self):
-        return self._email
+    def balance(self):
+        return self._balance
 
-    @property
-    def password(self):
-        return self._password
+    @balance.setter
+    def balance(self, amount):
+        if not isinstance(amount, (int, float)) or amount < 0:
+            raise ValueError("Balance must be non-negative")
+        self._balance = amount
 
-    @property
-    def get_date(self):
-        return self._created_at
+    def deduct_balance(self, amount):
+        if amount > self._balance:
+            raise ValueError("Insufficient balance")
+        self._balance -= amount
 
-    @username.setter
-    def username(self, name: str):
-        if name.isdigit() or len(name) < 4:
-            raise NameError("Error: Name is invalid.")
-        else:
-            self._username = name
+    def add_balance(self, amount):
+        self._balance += amount
 
-    @email.setter
-    def email(self, e: str):
-        pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if re.match(pattern, e) is None:
-            raise ValueError("Error: incorrect email.")
-        else:
-            self._email = e
+    def __str__(self):
+        return f"User({self._username}, balance=${self._balance:.2f})"
 
-    @password.setter
-    def password(self, pw: str):
-        if len(pw) < 8:
-            raise ValueError("Error: The password is too short.")
-        else:
-            self._password = pw
-
+    def __repr__(self):
+        return f"User(id={self._id}, username='{self._username}', balance={self._balance})"

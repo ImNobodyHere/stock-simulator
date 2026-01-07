@@ -1,17 +1,29 @@
-from datetime import datetime
-
 class Stock:
+    def __init__(self, symbol, name, current_price):
+        self._symbol = symbol.upper()
+        self._name = name
+        self._current_price = current_price
 
-    def __init__(self, symbol, price, currency):
-        self._symbol = symbol
-        self._price = price
-        self._currency = currency
-        self._created_at = datetime.now()
-        self._updated_at = datetime.now()
+    @property
+    def symbol(self):
+        return self._symbol
 
+    @property
+    def name(self):
+        return self._name
 
-    def update_price(self, new_price: float):
-        if new_price < 0:
-            raise ValueError("Error: price of stock cannot be negative")
+    @property
+    def current_price(self):
+        return self._current_price
 
-        self._price = new_price
+    @current_price.setter
+    def current_price(self, price):
+        if not isinstance(price, (int, float)) or price < 0:
+            raise ValueError("Price must be non-negative")
+        self._current_price = price
+
+    def __str__(self):
+        return f"{self._symbol}: ${self._current_price:.2f}"
+
+    def __repr__(self):
+        return f"Stock('{self._symbol}', '{self._name}', {self._current_price})"
