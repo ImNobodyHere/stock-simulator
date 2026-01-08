@@ -15,6 +15,8 @@ class Transaction:
         self.date_time = datetime.now()
         self.total = quantity * price
 
+
+    #Debugging and Clean message
     def __str__(self):
         return f"{self.type} {self.quantity} {self.stock.symbol} @ ${self.price:.2f}"
 

@@ -24,6 +24,8 @@ class Position:
             raise ValueError("Cannot sell more than owned")
         self.quantity -= quantity
 
+
+    #Debugging and Clean message
     def __str__(self):
         return f"{self.stock.symbol}: {self.quantity} shares @ ${self.average_price:.2f}"
 

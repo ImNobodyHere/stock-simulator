@@ -12,7 +12,7 @@ class PortfolioService:
         self.users = {}
         self.stocks = {}
         self.transactions = []
-        self.positions = {}  # {user_id: {symbol: Position}}
+        self.positions = {}
 
     # User management
     def create_user(self, username, email, password, balance=10000):

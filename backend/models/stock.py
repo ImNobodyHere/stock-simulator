@@ -22,6 +22,8 @@ class Stock:
             raise ValueError("Price must be non-negative")
         self._current_price = price
 
+
+    #Debugging and Clean message
     def __str__(self):
         return f"{self._symbol}: ${self._current_price:.2f}"
 

@@ -1,6 +1,4 @@
 from datetime import datetime
-import re
-
 
 class User:
     _id_counter = 0
@@ -40,6 +38,9 @@ class User:
     def add_balance(self, amount):
         self._balance += amount
 
+
+
+    #Debugging and Clean message
     def __str__(self):
         return f"User({self._username}, balance=${self._balance:.2f})"
 
