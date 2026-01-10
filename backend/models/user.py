@@ -3,11 +3,10 @@ from datetime import datetime
 class User:
     _id_counter = 0
 
-    def __init__(self, username, email, password, balance=10000.0):
+    def __init__(self, username, password, balance=10000.0):
         User._id_counter += 1
         self._id = User._id_counter
         self._username = username
-        self._email = email
         self._password = password
         self._balance = balance
         self._created_at = datetime.now()

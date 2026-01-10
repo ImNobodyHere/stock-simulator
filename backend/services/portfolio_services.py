@@ -15,8 +15,8 @@ class PortfolioService:
         self.positions = {}
 
     # User management
-    def create_user(self, username, email, password, balance=10000):
-        user = User(username, email, password, balance)
+    def create_user(self, username, password, balance=10000):
+        user = User(username, password, balance)
         self.users[user.id] = user
         return user
 

@@ -1,13 +1,8 @@
-import streamlit as st
+import os
 from datetime import datetime
 
-st.set_page_config(page_title="Simulateur Bourse", page_icon="📈", layout="centered")
-
-if 'users' not in st.session_state:
-    st.session_state.users = {}
-
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
+users = {}
+current_user = None
 
 STOCKS = {
     'APPL': {'name': 'Apple Inc.', 'price': 150.0},
@@ -17,280 +12,174 @@ STOCKS = {
     'TSLA': {'name': 'Tesla Inc.', 'price': 700.0},
 }
 
-def create_user(username, password, initial_balance=10000):
-    if username in st.session_state.users:
-        return False, "Ce nom d'utilisateur existe déjà"
 
-    st.session_state.users[username] = {
-        'password': password,
-        'balance': initial_balance,
-        'portfolio': {},  # {symbol: quantity}
-        'transactions': []
-    }
-    return True, "Compte créé avec succès"
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def login_user(username, password):
-    if username not in st.session_state.users:
-        return False, "Utilisateur introuvable"
-
-    if st.session_state.users[username]['password'] != password:
-        return False, "Mot de passe incorrect"
-
-    st.session_state.current_user = username
-    return True, f"Bienvenue {username} !"
+def create_user(username, password, balance=10000):
+    if username in users:
+        return False
+    users[username] = {'password': password, 'balance': balance, 'portfolio': {}, 'transactions': []}
+    return True
 
 
-def logout_user():
-    st.session_state.current_user = None
+def login(username, password):
+    global current_user
+    if username not in users or users[username]['password'] != password:
+        return False
+    current_user = username
+    return True
 
 
-def get_user_data():
-    if st.session_state.current_user:
-        return st.session_state.users[st.session_state.current_user]
-    return None
-
-
-def buy_stock(symbol, quantity):
-    user_data = get_user_data()
-    if not user_data:
-        return False, "Utilisateur non connecté"
-
-    if symbol not in STOCKS:
-        return False, "Action introuvable"
-
+def buy_stock(symbol, qty):
+    user = users[current_user]
     price = STOCKS[symbol]['price']
-    total_cost = price * quantity
-
-    if user_data['balance'] < total_cost:
-        return False, f"Fonds insuffisants (coût: {total_cost:.2f}€)"
-
-    user_data['balance'] -= total_cost
-
-    if symbol in user_data['portfolio']:
-        user_data['portfolio'][symbol] += quantity
-    else:
-        user_data['portfolio'][symbol] = quantity
-
-    user_data['transactions'].append({
+    cost = price * qty
+    if user['balance'] < cost:
+        return False
+    user['balance'] -= cost
+    user['portfolio'][symbol] = user['portfolio'].get(symbol, 0) + qty
+    user['transactions'].append({
         'date': datetime.now().strftime("%d/%m/%Y %H:%M"),
         'type': 'ACHAT',
         'symbol': symbol,
-        'quantity': quantity,
+        'qty': qty,
         'price': price,
-        'total': total_cost
+        'total': cost
     })
-
-    return True, f" Achat réussi : {quantity} {symbol} pour {total_cost:.2f}€"
-
+    return True
 
 
+def login_menu():
+    clear()
+    print("=== SIMULATEUR DE BOURSE ===\n")
+    print("1. Connexion")
+    print("2. Inscription")
+    print("3. Quitter\n")
 
-def show_auth_page():
+    choice = input("Choix: ")
 
-    st.markdown("<h1 style='text-align: center;'> Simulateur de Bourse</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray;'>Plateforme de trading virtuel pour étudiants</p>",
-                unsafe_allow_html=True)
-
-    st.markdown("---")
-
-
-    tab1, tab2 = st.tabs([" Connexion", " Inscription"])
-
-    with tab1:
-        st.subheader("Se connecter")
-
-        with st.form("login_form"):
-            username = st.text_input("Nom d'utilisateur")
-            password = st.text_input("Mot de passe", type="password")
-            submit = st.form_submit_button("Se connecter", use_container_width=True)
-
-            if submit:
-                if not username or not password:
-                    st.error(" Veuillez remplir tous les champs")
-                else:
-                    success, message = login_user(username, password)
-                    if success:
-                        st.success(message)
-                        st.rerun()
-                    else:
-                        st.error(f" {message}")
-
-
-    with tab2:
-        st.subheader("Créer un compte")
-
-        with st.form("signup_form"):
-            new_username = st.text_input("Choisir un nom d'utilisateur")
-            new_password = st.text_input("Choisir un mot de passe", type="password")
-            confirm_password = st.text_input("Confirmer le mot de passe", type="password")
-            initial_balance = st.number_input("Solde initial (€)", min_value=1000, value=10000, step=1000)
-
-            submit = st.form_submit_button("S'inscrire", use_container_width=True)
-
-            if submit:
-                if not new_username or not new_password:
-                    st.error(" Veuillez remplir tous les champs")
-                elif len(new_username) < 3:
-                    st.error(" Le nom d'utilisateur doit contenir au moins 3 caractères")
-                elif len(new_password) < 4:
-                    st.error(" Le mot de passe doit contenir au moins 4 caractères")
-                elif new_password != confirm_password:
-                    st.error(" Les mots de passe ne correspondent pas")
-                else:
-                    success, message = create_user(new_username, new_password, initial_balance)
-                    if success:
-                        st.success(f" {message}")
-                        st.info("Vous pouvez maintenant vous connecter")
-                    else:
-                        st.error(f" {message}")
-
-
-
-
-def show_main_page():
-
-    user_data = get_user_data()
-    username = st.session_state.current_user
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.title(f" Bienvenue {username}")
-    with col2:
-        if st.button(" Déconnexion"):
-            logout_user()
-            st.rerun()
-
-    st.markdown(f"###  Solde : *{user_data['balance']:.2f} €*")
-
-    st.markdown("---")
-
-    tab1, tab2, tab3 = st.tabs([" Acheter des actions", " Mon Portfolio", " Historique"])
-
-    with tab1:
-        st.subheader("Actions Disponibles")
-
-        for symbol, info in STOCKS.items():
-            with st.container():
-                col1, col2, col3 = st.columns([2, 2, 1])
-
-                with col1:
-                    st.markdown(f"*{symbol}*")
-                    st.caption(info['name'])
-
-                with col2:
-                    st.markdown(f"Prix : *{info['price']:.2f} €*")
-
-                with col3:
-                    if st.button("Acheter", key=f"buy_{symbol}"):
-                        st.session_state.selected_stock = symbol
-
-                st.markdown("---")
-
-        if 'selected_stock' in st.session_state and st.session_state.selected_stock:
-            selected = st.session_state.selected_stock
-            st.markdown(f"### Acheter {selected} - {STOCKS[selected]['name']}")
-
-            with st.form("buy_form"):
-                quantity = st.number_input(
-                    "Quantité",
-                    min_value=1,
-                    max_value=1000,
-                    value=1,
-                    step=1
-                )
-
-                total_cost = quantity * STOCKS[selected]['price']
-                st.info(f" Coût total : *{total_cost:.2f} €*")
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    submit = st.form_submit_button(" Confirmer l'achat", use_container_width=True)
-                with col2:
-                    cancel = st.form_submit_button(" Annuler", use_container_width=True)
-
-                if submit:
-                    success, message = buy_stock(selected, quantity)
-                    if success:
-                        st.success(message)
-                        st.balloons()
-                        del st.session_state.selected_stock
-                        st.rerun()
-                    else:
-                        st.error(message)
-
-                if cancel:
-                    del st.session_state.selected_stock
-                    st.rerun()
-
-    with tab2:
-        st.subheader("Mon Portefeuille")
-
-        if not user_data['portfolio']:
-            st.info(" Votre portfolio est vide. Achetez des actions pour commencer !")
+    if choice == '1':
+        clear()
+        print("=== CONNEXION ===\n")
+        u = input("Username: ")
+        p = input("Password: ")
+        if login(u, p):
+            main_menu()
         else:
-            total_value = 0
+            print("\nErreur de connexion")
+            input("Entree pour continuer...")
+            login_menu()
 
-            for symbol, quantity in user_data['portfolio'].items():
-                price = STOCKS[symbol]['price']
-                value = quantity * price
-                total_value += value
+    elif choice == '2':
+        clear()
+        print("=== INSCRIPTION ===\n")
+        u = input("Username: ")
+        p = input("Password: ")
+        if len(u) < 3 or len(p) < 4:
+            print("\nUsername min 3 char, password min 4 char")
+            input("Entree...")
+            login_menu()
+        if create_user(u, p):
+            print("\nCompte cree!")
+            input("Entree...")
+        login_menu()
 
-                with st.container():
-                    col1, col2, col3, col4 = st.columns([2, 1, 2, 2])
-
-                    with col1:
-                        st.markdown(f"*{symbol}*")
-                        st.caption(STOCKS[symbol]['name'])
-
-                    with col2:
-                        st.metric("Quantité", quantity)
-
-                    with col3:
-                        st.metric("Prix", f"{price:.2f} €")
-
-                    with col4:
-                        st.metric("Valeur", f"{value:.2f} €")
-
-                    st.markdown("---")
-
-            st.markdown(f"###  Valeur totale du portfolio : *{total_value:.2f} €*")
-            st.markdown(f"*Patrimoine total : {total_value + user_data['balance']:.2f} €*")
-
-    with tab3:
-        st.subheader("Historique des Transactions")
-
-        if not user_data['transactions']:
-            st.info(" Aucune transaction pour le moment")
-        else:
-            for trans in reversed(user_data['transactions']):
-                with st.container():
-                    col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
-
-                    with col1:
-                        st.markdown(f"*{trans['date']}*")
-
-                    with col2:
-                        emoji = "🟢" if trans['type'] == "ACHAT" else "🔴"
-                        st.markdown(f"{emoji} {trans['type']}")
-
-                    with col3:
-                        st.markdown(f"{trans['quantity']} {trans['symbol']}")
-
-                    with col4:
-                        st.markdown(f"*{trans['total']:.2f} €*")
-                        st.caption(f"Prix unitaire : {trans['price']:.2f} €")
-
-                    st.markdown("---")
-
-
-
-def main():
-    if st.session_state.current_user is None:
-        show_auth_page()
+    elif choice == '3':
+        exit()
     else:
-        show_main_page()
+        login_menu()
 
 
-if __name__ == "_main_":
-    main()
+def main_menu():
+    global current_user
+    clear()
+    user = users[current_user]
+    print(f"=== BIENVENUE {current_user} ===")
+    print(f"Solde: {user['balance']:.2f} EUR\n")
+    print("1. Acheter")
+    print("2. Portfolio")
+    print("3. Historique")
+    print("4. Deconnexion\n")
+
+    choice = input("Choix: ")
+
+    if choice == '1':
+        buy_menu()
+    elif choice == '2':
+        portfolio()
+    elif choice == '3':
+        history()
+    elif choice == '4':
+        current_user = None
+        login_menu()
+    else:
+        main_menu()
+
+
+def buy_menu():
+    clear()
+    print("=== ACTIONS DISPONIBLES ===\n")
+    stocks = list(STOCKS.items())
+    for i, (sym, info) in enumerate(stocks, 1):
+        print(f"{i}. {sym} - {info['name']} - {info['price']:.2f} EUR")
+    print(f"{len(stocks) + 1}. Retour\n")
+
+    try:
+        choice = int(input("Choix: "))
+        if choice == len(stocks) + 1:
+            main_menu()
+        elif 1 <= choice <= len(stocks):
+            sym = stocks[choice - 1][0]
+            clear()
+            print(f"=== ACHETER {sym} ===\n")
+            print(f"Prix: {STOCKS[sym]['price']:.2f} EUR")
+            qty = int(input("Quantite: "))
+            total = qty * STOCKS[sym]['price']
+            print(f"Total: {total:.2f} EUR")
+            if input("Confirmer? (o/n): ") == 'o':
+                if buy_stock(sym, qty):
+                    print("Achat reussi!")
+                else:
+                    print("Fonds insuffisants")
+            input("\nEntree...")
+            buy_menu()
+    except:
+        buy_menu()
+
+
+def portfolio():
+    clear()
+    user = users[current_user]
+    print("=== MON PORTFOLIO ===\n")
+    if not user['portfolio']:
+        print("Portfolio vide")
+    else:
+        total = 0
+        for sym, qty in user['portfolio'].items():
+            val = qty * STOCKS[sym]['price']
+            total += val
+            print(f"{sym}: {qty} actions - {val:.2f} EUR")
+        print(f"\nTotal: {total:.2f} EUR")
+        print(f"Solde: {user['balance']:.2f} EUR")
+        print(f"Patrimoine: {total + user['balance']:.2f} EUR")
+    input("\nEntree...")
+    main_menu()
+
+
+def history():
+    clear()
+    user = users[current_user]
+    print("=== HISTORIQUE ===\n")
+    if not user['transactions']:
+        print("Aucune transaction")
+    else:
+        for t in reversed(user['transactions']):
+            print(f"{t['date']} - {t['type']} - {t['qty']} {t['symbol']} - {t['total']:.2f} EUR")
+    input("\nEntree...")
+    main_menu()
+
+
+if __name__ == "__main__":
+    login_menu()
